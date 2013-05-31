@@ -6,27 +6,29 @@ function trim(string) {
 
 function start(whois) {
     function serverControl(client) {
-	function clientWriteCallback(data) {
-	    console.log('[server] sending whois data back to client');
-	    client.write(data);
-	}
+        session = {'id': client.address().address + ':' + client.address().port};
+        
+        function clientWriteCallback(data) {
+            console.log('[server][' + session.id + '] sending whois data back to client');
+            client.write(data);
+        }
 
-	function clientEndCallback() {
-	    console.log('[server] terminating connection with client');
-	    client.end();
-	}
+        function clientEndCallback() {
+            console.log('[server][' + session.id + '] terminating client connection');
+            client.end();
+        }
 
-	function onData(data) {
-	    // TODO: validate data
-	    queryDomain = trim(data.toString());
-	    console.log('[server] query received: ' + queryDomain);
-	    parts = queryDomain.split('.');
-	    tld = parts[parts.length-1];
-	    whois.query(queryDomain,tld,clientWriteCallback,clientEndCallback);
-	}
+        function onData(data) {
+            // TODO: validate data
+            session.queryDomain = trim(data.toString());
+            console.log('[server][' + session.id + '] query received: ' + session.queryDomain);
+            parts = session.queryDomain.split('.');
+            session.tld = parts[parts.length-1];
+            whois.query(session,clientWriteCallback,clientEndCallback);
+        }
 
-	client.on('data', onData);
-	console.log('[server] client connected');
+        client.on('data', onData);
+        console.log( '[server][' + session.id + '] new session: ' + JSON.stringify( client.address() ) );
     }
 
     var server = net.createServer(serverControl).listen(9000);
