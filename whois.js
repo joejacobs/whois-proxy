@@ -11,7 +11,11 @@ function doWhois(session,clientWriteCallback,clientEndCallback) {
 
     var whoisConnection = net.connect(whoisServers[session.tld],function() {
             console.log('[whois][' + session.id + '] connected to whois server, sending query');
-            whoisConnection.write(session.queryDomain + '\r\n');
+
+            if( session.tld == 'com' || session.tld == 'net' )
+                whoisConnection.write('domain ' + session.queryDomain + '\r\n');
+            else
+                whoisConnection.write(session.queryDomain + '\r\n');
     });
 
     function afterWhoisCallback(data) {
