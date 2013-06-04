@@ -1,14 +1,24 @@
 var net = require('net');
-var ianaServer = {host:'whois.iana.org', port:43};
+var ianaServer = {host:'whois.iana.org', port:43};// the IANA server details
+
+// Once we know the whois server for a tld, we store it here so we don't have
+// to re-query IANA for the details. Each server has the following form
+//      host: the hostname
+//      port: port number, always 43
 var whoisServers = {};
 
+// Trim a string to remove whitespace before and after
 function trim(string) {
     return string.replace(/^\s*|\s*$/g, '')
 }
 
+// Perform the actual whois lookup
+// TODO: add hard whois option for .com and .net
 function doWhois(session,clientWriteCallback,clientEndCallback) {
     console.log('[whois][' + session.id + '] running whois lookup');
 
+    // Connect to the whois server. For .com and .net, the format of the query is slightly
+    // different
     var whoisConnection = net.connect(whoisServers[session.tld],function() {
             console.log('[whois][' + session.id + '] connected to whois server, sending query');
 
@@ -18,6 +28,7 @@ function doWhois(session,clientWriteCallback,clientEndCallback) {
                 whoisConnection.write(session.queryDomain + '\r\n');
     });
 
+    // callback for data from the whois server
     function afterWhoisCallback(data) {
         afterWhois(session,data,clientWriteCallback);
     }
