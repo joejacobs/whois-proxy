@@ -20,3 +20,11 @@ Requirements
 ------------
 * [node.js] (http://nodejs.org/)
 * [net module] (http://nodejs.org/api/net.html)
+
+TODO
+----
+* Validation!
+* Hard whois for .com and .net
+* Caching
+* Extract common data (eg. name servers and expiry date).
+* Make text parsing non-blocking (?)
