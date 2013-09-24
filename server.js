@@ -1,4 +1,4 @@
-// This object handles the connections with the users who connect to our whois server
+// This class handles the connections with the users who connect to our whois server
 
 var net = require('net');
 
@@ -8,7 +8,8 @@ function trim(string) {
 }
 
 // create an instance of the server object
-function start(whois) {
+function start(whois, logger) {
+    var server = null;
 
     // handles a new connection from a user
     function serverControl(client) {
@@ -17,17 +18,21 @@ function start(whois) {
         //      id: an identifier for the session
         //      query: the domain name submitted with the query
         //      tld: top-level domain name for the query
-        session = {'id': client.address().address + ':' + client.address().port};
+        var session = {
+            'id'    : client.address().address + ':' + client.address().port,
+            'query' : null,
+            'tld'   : null
+        };
 
         // callback function to send data back to the user        
         function clientWriteCallback(data) {
-            console.log('[server][' + session.id + '] sending whois data back to client');
+            logger('[server][' + session.id + '] sending whois data back to client');
             client.write(data);
         }
 
         // callback function to terminate the current session
         function clientEndCallback() {
-            console.log('[server][' + session.id + '] terminating client connection');
+            logger('[server][' + session.id + '] terminating client connection');
             client.end();
         }
 
@@ -36,19 +41,20 @@ function start(whois) {
             // TODO: validate data
             // TODO: limit each session to 1 onData callback
             session.queryDomain = trim(data.toString());
-            console.log('[server][' + session.id + '] query received: ' + session.queryDomain);
             parts = session.queryDomain.split('.');
             session.tld = parts[parts.length-1];
+            logger('[server][' + session.id + '] query received: ' + session.queryDomain);
+
             whois.query(session,clientWriteCallback,clientEndCallback);
         }
 
         client.on('data', onData);
-        console.log( '[server][' + session.id + '] new session: ' + JSON.stringify( client.address() ) );
+        logger( '[server][' + session.id + '] new connection: ' + JSON.stringify( client.address() ) );
     }
 
     // create server
-    var server = net.createServer(serverControl).listen(9000);
-    console.log('[server] server created on port 9000');
+    server = net.createServer(serverControl).listen(9000);
+    logger('[server] server created on port 9000');
 }
 
 exports.start = start;
