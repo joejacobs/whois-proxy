@@ -8,11 +8,6 @@ var ianaServer = {host:'whois.iana.org', port:43};// the IANA server details
 //      port: port number, always 43
 var whoisServers = {};
 
-// Trim a string to remove whitespace before and after
-function trim(string) {
-    return string.replace(/^\s*|\s*$/g, '')
-}
-
 // Perform the actual whois lookup
 // TODO: add hard whois option for .com and .net
 function doWhois(session,clientWriteCallback,clientEndCallback) {
@@ -80,11 +75,11 @@ function afterIana(session,data) {
 
     for( x in lines ) {
         if( lines[x].charAt(0) == '%' ) continue;
-        if( trim(lines[x]) == '' ) continue;
+        if( lines[x].trim() == '' ) continue;
 
         if( lines[x].split(':')[0] == 'refer' ) {
-            logger( '[whois][' + session.id + '] refer tag found: ' + trim(lines[x]) );
-            whoisServers[session.tld] = {host:trim( lines[x].split(':')[1] ), port:43};
+            logger( '[whois][' + session.id + '] refer tag found: ' + lines[x].trim() );
+            whoisServers[session.tld] = {host:lines[x].split(':')[1].trim(), port:43};
             return;
         }
     }

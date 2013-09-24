@@ -2,11 +2,6 @@
 
 var net = require('net');
 
-// trims a string to remove any whitespace before and after
-function trim(string) {
-    return string.replace(/^\s*|\s*$/g, '')
-}
-
 // create an instance of the server object
 function start(whois, logger) {
     var server = null;
@@ -40,7 +35,7 @@ function start(whois, logger) {
         function onData(data) {
             // TODO: validate data
             // TODO: limit each session to 1 onData callback
-            session.queryDomain = trim(data.toString());
+            session.queryDomain = data.toString().trim();
             parts = session.queryDomain.split('.');
             session.tld = parts[parts.length-1];
             logger('[server][' + session.id + '] query received: ' + session.queryDomain);
