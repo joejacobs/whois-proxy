@@ -20,6 +20,7 @@ Requirements
 ------------
 * [node.js] (http://nodejs.org/)
 * [net module] (http://nodejs.org/api/net.html)
+* [XRegExp] (http://xregexp.com/)
 
 Usage
 -----
