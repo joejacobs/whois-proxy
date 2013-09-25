@@ -3,14 +3,22 @@
 // that has all details of the connection to the user.
 
 var net = require('net');
+var XRegExp = require('xregexp').XRegExp;
 var Whois = require('./whois');
 var Session = require('./session');
 
-// Global variables
-var whois = null; // manages the connections with the whois servers
-var server = null; // an instance of this class
+/* GLOBAL VARIABLES */
 
-// Global functions
+// manages the connections with the whois servers
+var whois = null;
+
+// and instance of this class
+var server = null;
+
+// domain name validation regex
+var dnameRegex = XRegExp('^[a-z0-9-]+\.(([a-z]{2,}\.[a-z]{2,2})|([a-z]{2,}))$');
+
+/* GLOBAL FUNCTIONS */
 
 // only displays output if verbose mode is turned on
 function logger(data) {
@@ -20,7 +28,13 @@ function logger(data) {
     return;
 }
 
-// initialiser for the main Server class that manages incoming connections from users
+/*
+ * SERVER CLASS
+ * main class that manages incoming connections from users and delegates whois queries
+ * to the whois server manager (whois.js)
+ */
+
+// initialiser
 function Server() {
     this.instance = null;
     this.verbose = false;
@@ -32,11 +46,19 @@ Server.prototype.serverControl = function(client) {
 
     // callback for when data is sent from the user to the server
     function onData(data) {
-        data = data.toString().toLowerCase();
-        // TODO: validate data
-        session.initQuery(data);
-        logger('[server][' + session.id + '] query received: ' + session.dname);
-        whois.query(session);
+        data = data.toString().trim().toLowerCase();
+
+        if( !dnameRegex.test(data) ) {
+            // domain name validation fail, return error to user
+            session.clientWrite('The domain name provided is invalid');
+            session.clientEnd();
+            logger('[server][' + session.id + '] domain name regex failed for input: '
+                    + data);
+        } else {
+            session.initQuery(data);
+            logger('[server][' + session.id + '] query received: ' + session.dname);
+            whois.query(session);
+        }
     }
 
     session.init(client,logger);
