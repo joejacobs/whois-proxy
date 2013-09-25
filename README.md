@@ -30,7 +30,7 @@ If you would like to turn on verbose output to console
     node server.js --verbose
 or
 
-    node server.js -v`
+    node server.js -v
 
 TODO
 ----
