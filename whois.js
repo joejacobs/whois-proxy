@@ -61,7 +61,6 @@ Whois.prototype.doWhois = function(session,obj) {
 // callback function for receiving data from the whois server
 Whois.prototype.receiveWhois = function(session,data) {
     logger('[whois][' + session.id + '] received data from whois server');
-    // TODO: validate data
     session.clientWrite(data.toString());
 }
 
@@ -97,9 +96,7 @@ Whois.prototype.receiveIANA = function(data,session) {
 
     if( session.tld in this.whoisServers ) return;
 
-    // TODO: validate data
-
-    var lines = data.toString().split('\n');
+    var lines = data.toString().trim().split('\n');
 
     for( x in lines ) {
         if( lines[x].charAt(0) == '%' ) continue;// ignore comments
