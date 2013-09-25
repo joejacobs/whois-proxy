@@ -1,10 +1,22 @@
-// the whois server manager, handles all communication with the whois servers and IANA
-
 var net = require('net');
+
+/* GLOBAL VARIABLES */
+
+// pointer to the global logger function
 var logger = null;
 
+/*
+ * WHOIS
+ *
+ * The whois server manager, handles all communication with the whois servers and IANA.
+ * IANA holds information about whois servers for all top-level domain names. So we query
+ * their servers if we don't know the whois server for a particular tld.
+ */
+
+// initialiser
 function Whois() {
-    this.ianaServer = {host:'whois.iana.org', port:43};// the IANA server details
+    // the IANA server details
+    this.ianaServer = {host:'whois.iana.org', port:43};
 
     // Once we know the whois server for a tld, we store it here so we don't have to
     // re-query IANA for the details. Each server has the following form

@@ -1,7 +1,3 @@
-// the main server class, handles incoming connections from users and delegates queries
-// to the whois server manager (whois.js). creates a new session object for each query
-// that has all details of the connection to the user.
-
 var net = require('net');
 var XRegExp = require('xregexp').XRegExp;
 var Whois = require('./whois');
@@ -30,8 +26,10 @@ function logger(data) {
 
 /*
  * SERVER CLASS
- * main class that manages incoming connections from users and delegates whois queries
- * to the whois server manager (whois.js)
+ *
+ * Main class that manages incoming connections from users and delegates whois queries
+ * to the whois server manager (whois.js). Creates a new Session object for each query
+ * that has all details of the connection to the user.
  */
 
 // initialiser
@@ -85,5 +83,6 @@ Server.prototype.init = function() {
     whois.init(logger);
 }
 
+// launch and initialise server
 server = new Server();
 server.init()

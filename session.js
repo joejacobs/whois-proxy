@@ -1,4 +1,8 @@
-// Contains all details about a session with a given user
+/*
+ * SESSION
+ *
+ * Contains all details about a session with a given user
+ */ 
 
 function Session() {
     var client = null;
