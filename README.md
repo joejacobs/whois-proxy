@@ -21,6 +21,17 @@ Requirements
 * [node.js] (http://nodejs.org/)
 * [net module] (http://nodejs.org/api/net.html)
 
+Usage
+-----
+    node server.js
+
+If you would like to turn on verbose output to console
+
+    node server.js --verbose
+or
+
+    node server.js -v`
+
 TODO
 ----
 * Validation!
