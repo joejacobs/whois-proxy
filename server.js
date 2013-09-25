@@ -34,15 +34,18 @@ Server.prototype.serverControl = function(client) {
     function onData(data) {
         data = data.toString().toLowerCase();
         // TODO: validate data
-        // TODO: limit each session to 1 onData callback
         session.initQuery(data);
         logger('[server][' + session.id + '] query received: ' + session.dname);
         whois.query(session);
     }
 
     session.init(client,logger);
-    client.on('data', onData);
-    logger( '[server][' + session.id + '] new connection: ' + JSON.stringify( client.address() ) );
+
+    // we expect only one line of data from the client, ignore everything else by using
+    // a one time callback function
+    client.once('data', onData);
+    logger( '[server][' + session.id + '] new connection: '
+            + JSON.stringify( client.address() ) );
 }
 
 // initialises the Server class
