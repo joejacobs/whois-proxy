@@ -14,7 +14,7 @@ A simple no-frills (bleeding edge, not for production use) whois server. Acts as
 * no caching of results so if we are blocked by the whois server, we'll just return the error message to the user
 * doesn't have/need a list of whois servers since we get this automatically from IANA
 * the whois servers for different TLDs are cached so we don't need to keep querying the IANA server
-* currently no validation in place for data received from the client/whois servers (very dangerous!) 
+* currently no validation in place for data received from the whois servers
 
 Requirements
 ------------
