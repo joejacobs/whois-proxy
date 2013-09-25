@@ -6,8 +6,11 @@ var net = require('net');
 var Whois = require('./whois');
 var Session = require('./session');
 
+// Global variables
 var whois = null; // manages the connections with the whois servers
 var server = null; // an instance of this class
+
+// Global functions
 
 // only displays output if verbose mode is turned on
 function logger(data) {
@@ -29,9 +32,10 @@ Server.prototype.serverControl = function(client) {
 
     // callback for when data is sent from the user to the server
     function onData(data) {
+        data = data.toString().toLowerCase();
         // TODO: validate data
         // TODO: limit each session to 1 onData callback
-        session.initQuery(data.toString());
+        session.initQuery(data);
         logger('[server][' + session.id + '] query received: ' + session.dname);
         whois.query(session);
     }
@@ -56,4 +60,5 @@ Server.prototype.init = function() {
     whois.init(logger);
 }
 
-module.exports = Server;
+server = new Server();
+server.init()
