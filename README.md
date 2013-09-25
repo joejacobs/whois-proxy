@@ -34,7 +34,7 @@ or
 
 TODO
 ----
-* Validation!
+* Validation for data from whois servers (?)
 * Hard whois for .com and .net
 * Caching
 * Extract common data (eg. name servers and expiry date).
