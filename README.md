@@ -23,14 +23,14 @@ Requirements
 
 Usage
 -----
-    node server.js
+    node main.js
 
 If you would like to turn on verbose output to console
 
-    node server.js --verbose
+    node main.js --verbose
 or
 
-    node server.js -v
+    node main.js -v
 
 TODO
 ----
