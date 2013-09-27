@@ -1,28 +1,6 @@
 var net = require('net');
 var XRegExp = require('xregexp').XRegExp;
-var Whois = require('./whois');
 var Session = require('./session');
-
-/* GLOBAL VARIABLES */
-
-// manages the connections with the whois servers
-var whois = null;
-
-// and instance of this class
-var server = null;
-
-// domain name validation regex
-var dnameRegex = XRegExp('^[a-z0-9-]+\.(([a-z]{2,}\.[a-z]{2,2})|([a-z]{2,}))$');
-
-/* GLOBAL FUNCTIONS */
-
-// only displays output if verbose mode is turned on
-function logger(data) {
-    if( server.verbose )
-        return console.log(data);
-
-    return;
-}
 
 /*
  * SERVER CLASS
@@ -32,57 +10,67 @@ function logger(data) {
  * that has all details of the connection to the user.
  */
 
-// initialiser
 function Server() {
-    this.instance = null;
-    this.verbose = false;
-}
+    var netServer = null; // the net module server
+    var whois = null; // manages the connections with the whois servers
+    var logger = null;
+ 
+    // domain name validation regex
+    var dnameRegex = XRegExp('^[a-z0-9-]+\.(([a-z]{2,}\.[a-z]{2,2})|([a-z]{2,}))$');
 
-// callback function that initialises a session with a client
-Server.prototype.serverControl = function(client) {
-    var session = new Session();
-
-    // callback for when data is sent from the user to the server
-    function onData(data) {
+    // callback for when the user sends data to the server
+    var dataListener = function(data,session) {
         data = data.toString().trim().toLowerCase();
 
         if( !dnameRegex.test(data) ) {
-            // domain name validation fail, return error to user
+            // domain name validation failed, return error to user
             session.clientWrite('The domain name provided is invalid');
             session.clientEnd();
-            logger('[server][' + session.id + '] domain name regex failed for input: '
-                    + data);
+            logger.log( '[server][' + session.getID() + '] domain name regex failed for'
+                    + ' input: ' + data );
         } else {
             session.initQuery(data);
-            logger('[server][' + session.id + '] query received: ' + session.dname);
+            logger.log( '[server][' + session.getID() + '] query received: '
+                    + session.getDomainName() );
             whois.query(session);
         }
     }
 
-    session.init(client,logger);
+    // callback function that initialises a session with a client
+    var connectionListener = function(client) {
+        var session = new Session();
+        session.init(client,logger);
 
-    // we expect only one line of data from the client, ignore everything else by using
-    // a one time callback function
-    client.once('data', onData);
-    logger( '[server][' + session.id + '] new connection: '
-            + JSON.stringify( client.address() ) );
+        function dataListenerDummy(data) {
+            dataListener(data,session);
+        }
+
+        // we expect only one line of data from the client, ignore everything else by
+        // using a one time callback function
+        client.once( 'data', dataListenerDummy );
+        logger.log( '[server][' + session.getID() + '] new connection: '
+                + JSON.stringify( client.address() ) );
+    }
+
+    return {
+        // getter for verbose
+        isVerbose:function() {
+            return verbose;
+        }, 
+
+        // initialises the Server class
+        init:function(main) {
+            // get logger object
+            logger = main.logger;
+
+            // create whois server manager object
+            whois = main.whois;
+
+            // create server
+            netServer = net.createServer(connectionListener).listen(9000);
+            logger.log('[server] server created on port 9000');
+        }
+    }
 }
 
-// initialises the Server class
-Server.prototype.init = function() {
-    // enable console logging if needed
-    if( process.argv[2] == '-v' || process.argv[2] == '--verbose' )
-        this.verbose = true;
-
-    // create server
-    this.instance = net.createServer(this.serverControl).listen(9000);
-    logger('[server] server created on port 9000');
-
-    // create whois server manager object
-    whois = new Whois();
-    whois.init(logger);
-}
-
-// launch and initialise server
-server = new Server();
-server.init()
+module.exports = Server;

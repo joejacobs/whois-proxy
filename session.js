@@ -6,36 +6,53 @@
 
 function Session() {
     var client = null;
-    var dname = null; // domain name submitted with the query
-    var tld = null; // top-level domain name for the query
-    var id = null; // a human-readable identifier for the session
     var logger = null;
-}
+    var domainName = null; // domain name submitted with the query
+    var TLD = null; // top-level domain name for the query
+    var ID = null; // a human-readable identifier for the session
 
-// initialise
-Session.prototype.init = function(client,logger) {
-    this.client = client;
-    this.logger = logger;
-    this.id = client.address().address + ':' + client.address().port;
-}
+    return {
+        // getter for ID
+        getID:function() {
+            return ID;
+        },
 
-// process a query
-Session.prototype.initQuery = function(query) {
-    parts = query.split('.');
-    this.dname = query.toString().trim();
-    this.tld = parts[parts.length-1];
-}
+        // getter for domain name
+        getDomainName:function() {
+            return domainName;
+        },
 
-// callback function to send data back to the user
-Session.prototype.clientWrite = function(data) {
-    this.logger('[session][' + this.id + '] sending whois data back to client');
-    this.client.write(data)
-}
+        // getter for tld
+        getTLD:function() {
+            return TLD;
+        },
 
-// callback function to terminate the current session
-Session.prototype.clientEnd = function() {
-    this.logger('[session][' + this.id + '] terminating client connection');
-    this.client.end();
+        // callback function to send data back to the user
+        clientWrite:function(data) {
+            logger.log('[session][' + ID + '] sending whois data back to client');
+            client.write(data)
+        },
+
+        // callback function to terminate the current session
+        clientEnd:function() {
+            logger.log('[session][' + ID + '] terminating client connection');
+            client.end();
+        },
+
+        // process a query
+        initQuery:function(query) {
+            parts = query.split('.');
+            domainName = query.toString().trim();
+            TLD = parts[parts.length-1];
+        },
+
+        // initialise
+        init:function(clientObj,loggerObj) {
+            client = clientObj;
+            logger = loggerObj;
+            ID = client.address().address + ':' + client.address().port;
+        }
+    }
 }
 
 module.exports = Session;

@@ -1,10 +1,5 @@
 var net = require('net');
 
-/* GLOBAL VARIABLES */
-
-// pointer to the global logger function
-var logger = null;
-
 /*
  * WHOIS
  *
@@ -16,143 +11,148 @@ var logger = null;
 // initialiser
 function Whois() {
     // the IANA server details
-    this.ianaServer = {host:'whois.iana.org', port:43};
+    var ianaServer = {host:'whois.iana.org', port:43};
 
     // Once we know the whois server for a tld, we store it here so we don't have to
     // re-query IANA for the details. Each server has the following form
     //      host: the hostname
     //      port: port number, always 43
-    this.whoisServers = {};
-}
+    var whoisServers = {};
 
-// Perform the actual whois lookup
-// TODO: add hard whois option for .com and .net
-Whois.prototype.doWhois = function(session,obj) {
-    var connection = null;
+    // Perform the actual whois lookup
+    // TODO: add hard whois option for .com and .net
+    var doWhois = function(session) {
+        var connection = null;
 
-    logger('[whois][' + session.id + '] running whois lookup');
+        logger.log('[whois][' + session.getID() + '] running whois lookup');
 
-    // Connect to the whois server. For .com and .net, the format of the query is
-    // slightly different
-    connection = net.connect(this.whoisServers[session.tld],function() {
-        logger('[whois][' + session.id + '] connected to whois server, sending query');
+        // Connect to the whois server. For .com and .net, the format of the query is
+        // slightly different
+        connection = net.connect(whoisServers[session.getTLD()],function() {
+            logger.log('[whois][' + session.getID()
+                + '] connected to whois server, sending query');
 
-        if( session.tld == 'com' || session.tld == 'net' )
-            connection.write('domain ' + session.dname + '\r\n');
-        else
-            connection.write(session.dname + '\r\n');
-    });
+            if( session.getTLD() == 'com' || session.getTLD() == 'net' )
+                connection.write('domain ' + session.getDomainName() + '\r\n');
+            else
+                connection.write(session.getDomainName() + '\r\n');
+        });
 
-    // dummy callback function for receiving data from the whois server
-    function receiveCallback(data) {
-        obj.receiveWhois(session,data);
+        // dummy callback function for receiving data from the whois server
+        function receiveCallback(data) {
+            receiveWhois(session,data);
+        }
+
+        // callback function for terminating connection with whois server
+        function endCallback() {
+            logger.log('[whois][' + session.getID() + '] whois server connection ended');
+            session.clientEnd();
+        }
+
+        connection.on('data',receiveCallback);
+        connection.on('end',endCallback);
     }
 
-    // callback function for terminating connection with whois server
-    function endCallback() {
-        logger('[whois][' + session.id + '] whois server connection ended');
-        session.clientEnd();
+    // callback function for receiving data from the whois server
+    var receiveWhois = function(session,data) {
+        logger.log('[whois][' + session.getID() + '] received data from whois server');
+        session.clientWrite(data.toString());
     }
 
-    connection.on('data',receiveCallback);
-    connection.on('end',endCallback);
-}
+    // queries the IANA server to get the whois server for a tld
+    var doIANA = function(session) {
+        var connection = null;
 
-// callback function for receiving data from the whois server
-Whois.prototype.receiveWhois = function(session,data) {
-    logger('[whois][' + session.id + '] received data from whois server');
-    session.clientWrite(data.toString());
-}
+        logger.log('[whois][' + session.getID() + '] getting whois server from IANA');
 
-// queries the IANA server to get the whois server for a tld
-Whois.prototype.doIANA = function(session,obj) {
-    var connection = null;
+        connection = net.connect(ianaServer,function() {
+            logger.log('[whois][' + session.getID()
+                + '] connected to IANA, sending query');
+            connection.write(session.getDomainName() + '\r\n');
+        });
 
-    logger('[whois][' + session.id + '] getting whois server from IANA');
+        // dummy callback function for receiving data from IANA
+        function receiveCallback(data) {
+            receiveIANA(data,session);
+        }
 
-    connection = net.connect(this.ianaServer,function() {
-        logger('[whois][' + session.id + '] connected to IANA, sending query');
-        connection.write(session.dname + '\r\n');
-    });
+        // dummy callback function for terminating connection with IANA
+        function endCallback() {
+            endIANA(session);
+        }
 
-    // dummy callback function for receiving data from IANA
-    function receiveCallback(data) {
-        obj.receiveIANA(data,session);
+        connection.on('data',receiveCallback);
+        connection.on('end',endCallback);
     }
 
-    // dummy callback function for terminating connection with IANA
-    function endCallback() {
-        obj.endIANA(session);
-    }
+    // callback function for receiving data from IANA, parses through the data looking
+    // for the whois server details (begins with 'refer:')
+    var receiveIANA = function(data,session) {
+        logger.log('[whois][' + session.getID() + '] received data from IANA');
 
-    connection.on('data',receiveCallback);
-    connection.on('end',endCallback);
-}
+        if( session.getTLD() in whoisServers ) return;
 
-// callback function for receiving data from IANA, parses through the data looking for
-// the whois server details (begins with 'refer:')
-Whois.prototype.receiveIANA = function(data,session) {
-    logger('[whois][' + session.id + '] received data from IANA');
+        var lines = data.toString().trim().split('\n');
 
-    if( session.tld in this.whoisServers ) return;
+        for( x in lines ) {
+            if( lines[x].charAt(0) == '%' ) continue;// ignore comments
+            if( lines[x].trim() == '' ) continue;// ignore blank lines
 
-    var lines = data.toString().trim().split('\n');
+            // look for the refer tag ( something like "refer: whois.server.tld" ), it
+            // should always be at port 43
+            if( lines[x].split(':')[0] == 'refer' ) {
+                logger.log( '[whois] refer tag found: ' + lines[x].trim() );
 
-    for( x in lines ) {
-        if( lines[x].charAt(0) == '%' ) continue;// ignore comments
-        if( lines[x].trim() == '' ) continue;// ignore blank lines
+                whoisServers[session.getTLD()] = {
+                    host:lines[x].split(':')[1].trim(),
+                    port:43
+                };
 
-        // look for the refer tag ( something like "refer: whois.server.tld" ), it should
-        // always be at port 43
-        if( lines[x].split(':')[0] == 'refer' ) {
-            logger( '[whois] refer tag found: ' + lines[x].trim() );
-
-            this.whoisServers[session.tld] = {
-                host:lines[x].split(':')[1].trim(),
-                port:43
-            };
-
-            return;
+                return;
+            }
         }
     }
-}
 
-// callback function from terminating the connection with IANA, if we got the whois
-// server details query it. Otherwise return an error message to the user
-Whois.prototype.endIANA = function(session) {
-    logger('[whois][' + session.id + '] IANA connection ended');
+    // callback function from terminating the connection with IANA, if we got the whois
+    // server details query it. Otherwise return an error message to the user
+    var endIANA = function(session) {
+        logger.log('[whois][' + session.getID() + '] IANA connection ended');
 
-    if( session.tld in this.whoisServers ) {
-        this.doWhois(session,this);
-    } else {
-        logger('[whois][' + session.id + '] refer tag not found');
-        session.clientWrite('Could not find whois servers for that domain name');
-        session.clientEnd();
+        if( session.getTLD() in whoisServers ) {
+            doWhois(session);
+        } else {
+            logger.log('[whois][' + session.getID() + '] refer tag not found');
+            session.clientWrite('Could not find whois servers for that domain name');
+            session.clientEnd();
+        }
     }
-}
 
-// called by the main server class to trigger a whois search. if we have the whois server
-// details query it, otherwise query IANA first
-Whois.prototype.query = function(session) {
-    logger('[whois][' + session.id + '] query received for ' + session.dname);
+    return {
+        // called by the main server class to trigger a whois search. if we have the
+        // whois server details query it, otherwise query IANA first
+        query:function(session) {
+            logger.log( '[whois][' + session.getID() + '] query received for '
+                    + session.getDomainName() );
 
-    if( session.tld in this.whoisServers ) {
-        logger('[whois][' + session.id + '] whois server found '
-                + JSON.stringify( this.whoisServers[session.tld] ) );
+            if( session.getTLD() in whoisServers ) {
+                logger.log('[whois][' + session.getID() + '] whois server found '
+                        + JSON.stringify( whoisServers[session.getTLD()] ) );
 
-        this.doWhois(session,this);
-    } else {
-        logger('[whois][' + session.id + '] whois server not found for '
-                + session.tld);
+                doWhois(session);
+            } else {
+                logger.log('[whois][' + session.getID() + '] whois server not found for '
+                        + session.getTLD());
 
-        this.doIANA(session,this);
+                doIANA(session);
+            }
+        },
+
+        // initialise the whois manager, just saves the logger so we can access it here
+        init:function(main) {
+            logger = main.logger;
+            logger.log('[whois] whois server manager initialised');
+        }
     }
-}
-
-// initialise the whois manager, just saves the logger so we can access it here
-Whois.prototype.init = function(logger_obj) {
-    logger = logger_obj;
-    logger('[whois] whois server manager initialised');
 }
 
 module.exports = Whois;
