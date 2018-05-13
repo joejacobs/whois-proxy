@@ -39,6 +39,6 @@ TODO
 
 License
 -------
-Copyright (c) 2018, Joe Jacobs. All rights reserved.
+Copyright (c) 2013-2018, Joe Jacobs. All rights reserved.
 
 Released under a [3-clause BSD License](LICENSE).
