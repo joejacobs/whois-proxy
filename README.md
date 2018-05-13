@@ -1,11 +1,9 @@
-whois-server
+Whois Server
 ============
-
 A simple no-frills (bleeding edge, not for production use) whois server
 
 Description
 -----------
-
 A simple no-frills (bleeding edge, not for production use) whois server. Acts as the middle-man between your client (PHP script, iOS app, etc.) and the actual whois servers so you don't need to store a list of whois servers in your client.
 
 * written in node.js (mainly as an exercise for me to learn node.js)
@@ -38,3 +36,9 @@ TODO
 * Caching
 * Extract common data (eg. name servers and expiry date).
 * Make text parsing non-blocking (?)
+
+License
+-------
+Copyright (c) 2018, Joe Jacobs. All rights reserved.
+
+Released under a [3-clause BSD License](LICENSE).
