@@ -1,10 +1,10 @@
-Whois Server
-============
-A simple no-frills (bleeding edge, not for production use) whois server
+Whois Proxy Server
+==================
+A simple no-frills (bleeding edge, not for production use) whois proxy server.
 
 Description
 -----------
-A simple no-frills (bleeding edge, not for production use) whois server. Acts as the middle-man between your client (PHP script, iOS app, etc.) and the actual whois servers so you don't need to store a list of whois servers in your client.
+A simple no-frills (bleeding edge, not for production use) whois proxy server. Acts as the middle-man between your client (PHP script, iOS app, etc.) and the actual whois servers so you don't need to store a list of whois servers in your client.
 
 * written in node.js (mainly as an exercise for me to learn node.js)
 * seems to work as expected
